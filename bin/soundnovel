@@ -67,11 +67,13 @@ cmd_list() {
 }
 
 cmd_start() {
+  local file_id=$1
+  local file_name=$(ls -d $NOVEL_DIR/* | awk -v id=$file_id 'NR=id')
   local x=1
   local y=0
 
   IFS=$'\n'
-  for line in $(cat lib/*/* | grep -vE "^#"); do
+  for line in $(cat $file_name | grep -vE "^#"); do
     # Blankという特殊な文字列のみの行が出現したときは、画面上で改行を挟む
     if [ "$line" = "<BLANK>" ]; then
       x=1
@@ -120,7 +122,6 @@ cmd_start() {
 
       sleep 0.01
     done <<< "$(echo -e $line | grep -o .)"
-    esc_seq=""
 
     echo
     print_prompt
