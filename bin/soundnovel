@@ -2,13 +2,53 @@
 
 set -eu
 
+readonly WIDTH=80
+
+x=1
+y=0
 IFS=$'\n'
 for line in $(cat lib/*/*); do
-  echo -e $line | grep -o . | xargs -I@ bash -c 'echo -n @; sleep 0.01'
+  if [ "$line" = "<BLANK>" ]; then
+    x=1
+    echo
+    echo
+    continue
+  fi
+
+  esc=""
+  flag=false
+  while read -r c; do
+    if [ "$c" = $'\x1b' ]; then
+      flag=true
+    fi
+
+    if [ $flag = true ] && [ "$c" = m ]; then
+      flag=false
+      echo -en "$esc"
+      x=$((x - 2))
+      esc=""
+    fi
+
+    if [ $flag = true ]; then
+      esc="$esc$c"
+      continue
+    fi
+
+    echo -ne "\x1b[${x}G"
+    echo -n "$c"
+    x=$((x + 2))
+    if [ "$WIDTH" -lt "$x" ]; then
+      x=1
+      echo
+    fi
+    sleep 0.01
+  done <<< "$(echo -e $line | grep -o .)"
+  esc=""
+
   echo
   echo -ne "\x1b[1;5m> \x1b[m"
   read ans
-  echo -ne "\x1b[1A\x1b[2K"
+  echo -ne "\x1b[1A\x1b[2K\x1b[1A"
   if [ "$ans" = q ]; then
     exit
   fi
