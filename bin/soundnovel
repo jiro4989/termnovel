@@ -68,7 +68,7 @@ cmd_list() {
 
 cmd_start() {
   local file_id=$1
-  local file_name=$(ls -d $NOVEL_DIR/* | awk -v id=$file_id 'NR=id')
+  local file_name=$(ls -d $NOVEL_DIR/* | awk -v id=$file_id 'NR==id')
   local x=1
   local y=0
 
