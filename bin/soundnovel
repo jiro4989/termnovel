@@ -58,7 +58,12 @@ EOS
 }
 
 cmd_list() {
-  ls -1 "$NOVEL_DIR/"
+  for f in "$NOVEL_DIR/"*; do
+    #local author=$(grep -E "^#" "$f" | awk -F : '$1~/AUTHOR/{print $2}')
+    local title=$(grep -E "^#" "$f" | awk -F : '$1~/TITLE/{print $2}' | sed -E 's/^\s+//g')
+    local desc=$(grep -E "^#" "$f" | awk -F : '$1~/DESC/{print $2}' | sed -E 's/^\s+//g')
+    echo -e "$title\t$desc"
+  done | column -t | nl
 }
 
 cmd_start() {
@@ -66,7 +71,7 @@ cmd_start() {
   local y=0
 
   IFS=$'\n'
-  for line in $(cat lib/*/*); do
+  for line in $(cat lib/*/* | grep -vE "^#"); do
     # Blankという特殊な文字列のみの行が出現したときは、画面上で改行を挟む
     if [ "$line" = "<BLANK>" ]; then
       x=1
