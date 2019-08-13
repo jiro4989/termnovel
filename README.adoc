@@ -17,3 +17,5 @@ BashでSoundNovelしたい。
 == Novel format
 
 TODO
+
+// 鬱
