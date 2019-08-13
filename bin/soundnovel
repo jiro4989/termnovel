@@ -2,64 +2,20 @@
 
 set -eu
 
-readonly WIDTH=80
-
-x=1
-y=0
-IFS=$'\n'
-for line in $(cat lib/*/*); do
-  if [ "$line" = "<BLANK>" ]; then
-    x=1
-    echo
-    echo
-    continue
-  fi
-
-  esc=""
-  flag=false
-  while read -r c; do
-    if [ "$c" = $'\x1b' ]; then
-      flag=true
-    fi
-
-    if [ $flag = true ] && [ "$c" = m ]; then
-      flag=false
-      echo -en "$esc"
-      x=$((x - 2))
-      esc=""
-    fi
-
-    if [ $flag = true ]; then
-      esc="$esc$c"
-      continue
-    fi
-
-    echo -ne "\x1b[${x}G"
-    echo -n "$c"
-    x=$((x + 2))
-    if [ "$WIDTH" -lt "$x" ]; then
-      x=1
-      echo
-    fi
-    sleep 0.01
-  done <<< "$(echo -e $line | grep -o .)"
-  esc=""
-
-  echo
-  echo -ne "\x1b[1;5m> \x1b[m"
-  read ans
-  echo -ne "\x1b[1A\x1b[2K\x1b[1A"
-  if [ "$ans" = q ]; then
-    exit
-  fi
-done
-exit
-
 readonly CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE:-$0}")";pwd)"
 readonly SCRIPT_NAME=$(basename $0)
 readonly LIB_DIR=$(dirname $CURRENT_DIR)/lib
 readonly NOVEL_DIR=$LIB_DIR/$SCRIPT_NAME
 readonly VERSION=1.0.0
+
+readonly WIDTH=80
+
+# ANSIエスケープシーケンス
+readonly BOLD="\x1b[1m"
+readonly BLINK="\x1b[5m"
+readonly RESET="\x1b[m"
+readonly CURSOL_UP="\x1b[1A"
+readonly CLEAR_LINE="\x1b[2K"
 
 main() {
   local cmd=$1
@@ -106,7 +62,84 @@ cmd_list() {
 }
 
 cmd_start() {
-  :
+  local x=1
+  local y=0
+
+  IFS=$'\n'
+  for line in $(cat lib/*/*); do
+    # Blankという特殊な文字列のみの行が出現したときは、画面上で改行を挟む
+    if [ "$line" = "<BLANK>" ]; then
+      x=1
+      echo
+      echo
+      continue
+    fi
+
+    # 1文字ずつ改行無しで描画を繰り返す
+    local esc_seq=""
+    local esc_seq_flag=false
+    while read -r c; do
+      # エスケープが出現したときはフラグをたてて、フラグが終了するまでエスケープ
+      # シーケンスのまとまりとして結合する。
+      if [ "$c" = $'\x1b' ]; then
+        esc_seq_flag=true
+      fi
+
+      # エスケープシーケンスの終了のタイミングで実行。エスケープは文字数にカウン
+      # トしたくないので x を引く。
+      if [ $esc_seq_flag = true ] && [ "$c" = m ]; then
+        esc_seq_flag=false
+        echo -en "$esc_seq"
+        x=$((x - 2))
+        esc_seq=""
+      fi
+
+      # エスケープシーケンスの結合
+      if [ $esc_seq_flag = true ]; then
+        esc_seq="$esc_seq$c"
+        continue
+      fi
+
+      # カーソル位置を x に移動
+      absolute_x $x
+
+      # 文字を出力し、次の出力位置のために加算
+      echo -n "$c"
+      x=$((x + 2))
+
+      # 位置xが幅を超過したら初期化して改行
+      if [ "$WIDTH" -lt "$x" ]; then
+        x=1
+        echo
+      fi
+
+      sleep 0.01
+    done <<< "$(echo -e $line | grep -o .)"
+    esc_seq=""
+
+    echo
+    print_prompt
+    read ans
+    clear_prompt
+
+    if [ "$ans" = q ]; then
+      exit
+    fi
+  done
+}
+
+## 現在行の絶対位置にカーソルを移動
+absolute_x() {
+  local x=$1
+  echo -ne "\x1b[${x}G"
+}
+
+print_prompt() {
+  echo -ne "${BOLD}${BLINK}> $RESET"
+}
+
+clear_prompt() {
+  echo -ne "${CURSOL_UP}${CLEAR_LINE}${CURSOL_UP}"
 }
 
 if [ $# -lt 1 ]; then
