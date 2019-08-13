@@ -1,0 +1,81 @@
+#!/bin/bash
+
+set -eu
+
+IFS=$'\n'
+for line in $(cat lib/*/*); do
+  echo -e $line | grep -o . | xargs -I@ bash -c 'echo -n @; sleep 0.01'
+  echo
+  echo -ne "\x1b[1;5m> \x1b[m"
+  read ans
+  echo -ne "\x1b[1A\x1b[2K"
+  if [ "$ans" = q ]; then
+    exit
+  fi
+done
+exit
+
+readonly CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE:-$0}")";pwd)"
+readonly SCRIPT_NAME=$(basename $0)
+readonly LIB_DIR=$(dirname $CURRENT_DIR)/lib
+readonly NOVEL_DIR=$LIB_DIR/$SCRIPT_NAME
+readonly VERSION=1.0.0
+
+main() {
+  local cmd=$1
+  shift
+  case $cmd in
+    help)
+      usage
+      ;;
+    version)
+      echo $VERSION
+      ;;
+    list)
+      cmd_list "$@"
+      ;;
+    start)
+      cmd_start "$@"
+      ;;
+    *)
+      echo "[WARN] Illegal comamnd. (cmd = $cmd)" >&2
+      return 1
+      ;;
+  esac
+}
+
+usage() {
+  cat << EOS
+$SCRIPT_NAME is a soundnovel cli.
+
+Usage:
+
+    $SCRIPT_NAME <command> [options]
+
+Commands:
+
+    help        Print help.
+    version     Print version.
+    list        Print all sound novels.
+    start       Start sound novel.
+EOS
+}
+
+cmd_list() {
+  ls -1 "$NOVEL_DIR/"
+}
+
+cmd_start() {
+  :
+}
+
+if [ $# -lt 1 ]; then
+  (
+    echo "[WARN] Must need command."
+    echo ""
+    usage
+  ) >&2
+  exit 1
+fi
+
+main ${1+"$@"}
