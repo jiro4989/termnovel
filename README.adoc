@@ -5,6 +5,8 @@
 % ./bin/soundnovel start 1
 ----
 
+image:./doc/headache.gif[]
+
 // = soundnovel
 // 
 // == Usage

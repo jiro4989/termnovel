@@ -96,8 +96,9 @@ cmd_start() {
       # トしたくないので x を引く。
       if [ $esc_seq_flag = true ] && [ "$c" = m ]; then
         esc_seq_flag=false
+        esc_seq="$esc_seq$c"
         echo -en "$esc_seq"
-        x=$((x - 2))
+        continue
         esc_seq=""
       fi
 
