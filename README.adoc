@@ -1,21 +1,26 @@
 = soundnovel
 
-BashでSoundNovelしたい。
-
-== Usage
-
-こんな感じで動くようにしたい。
-
 [source,bash]
 ----
-% soundnovel help
-% soundnovel list
-% soundnovel start <novel_id>
-% soundnovel start --peco
+% ./bin/soundnovel start 1
 ----
 
-== Novel format
-
-TODO
-
-// 鬱
+// = soundnovel
+// 
+// == Usage
+// 
+// こんな感じで動くようにしたい。
+// 
+// [source,bash]
+// ----
+// % soundnovel help
+// % soundnovel list
+// % soundnovel start <novel_id>
+// % soundnovel start --peco
+// ----
+// 
+// == Novel format
+// 
+// TODO
+// 
+// // 鬱
