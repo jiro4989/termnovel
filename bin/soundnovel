@@ -1,10 +1,14 @@
 #!/bin/bash
+# shellcheck disable=SC2013
 
 set -eu
 
-readonly CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE:-$0}")";pwd)"
-readonly SCRIPT_NAME=$(basename $0)
-readonly LIB_DIR=$(dirname $CURRENT_DIR)/lib
+readonly CURRENT_DIR="$(
+  cd "$(dirname "${BASH_SOURCE:-$0}")"
+  pwd
+)"
+readonly SCRIPT_NAME=$(basename "$0")
+readonly LIB_DIR=$(dirname "$CURRENT_DIR")/lib
 readonly NOVEL_DIR=$LIB_DIR/$SCRIPT_NAME
 readonly VERSION=1.0.0
 
@@ -18,6 +22,15 @@ readonly CURSOL_UP="\x1b[1A"
 readonly CLEAR_LINE="\x1b[2K"
 
 main() {
+  if [ $# -lt 1 ]; then
+    (
+      echo "[WARN] Must need command."
+      echo ""
+      usage
+    ) >&2
+    exit 1
+  fi
+
   local cmd=$1
   shift
   case $cmd in
@@ -60,20 +73,24 @@ EOS
 cmd_list() {
   for f in "$NOVEL_DIR/"*; do
     #local author=$(grep -E "^#" "$f" | awk -F : '$1~/AUTHOR/{print $2}')
-    local title=$(grep -E "^#" "$f" | awk -F : '$1~/TITLE/{print $2}' | sed -E 's/^\s+//g')
-    local desc=$(grep -E "^#" "$f" | awk -F : '$1~/DESC/{print $2}' | sed -E 's/^\s+//g')
+    local title
+    local desc
+
+    title=$(grep -E "^#" "$f" | awk -F : '$1~/TITLE/{print $2}' | sed -E 's/^\s+//g')
+    desc=$(grep -E "^#" "$f" | awk -F : '$1~/DESC/{print $2}' | sed -E 's/^\s+//g')
     echo -e "$title\t$desc"
   done | column -t | nl
 }
 
 cmd_start() {
   local file_id=$1
-  local file_name=$(ls -d $NOVEL_DIR/* | awk -v id=$file_id 'NR==id')
+  local file_name
+  file_name=$(find "$NOVEL_DIR"/* -name "*.novel" | awk -v id="$file_id" 'NR==id')
   local x=1
-  local y=0
+  #local y=0
 
   IFS=$'\n'
-  for line in $(cat $file_name | grep -vE "^#"); do
+  for line in $(grep -vE "^#" < "$file_name"); do
     # Blankという特殊な文字列のみの行が出現したときは、画面上で改行を挟む
     if [ "$line" = "<BLANK>" ]; then
       x=1
@@ -122,11 +139,11 @@ cmd_start() {
       fi
 
       sleep 0.01
-    done <<< "$(echo -e $line | grep -o .)"
+    done <<< "$(echo -e "$line" | grep -o .)"
 
     echo
     print_prompt
-    read ans
+    read -r ans
     clear_prompt
 
     if [ "$ans" = q ]; then
@@ -141,6 +158,7 @@ absolute_x() {
   echo -ne "\x1b[${x}G"
 }
 
+## 明滅するプロンプトを表示
 print_prompt() {
   echo -ne "${BOLD}${BLINK}> $RESET"
 }
@@ -149,13 +167,5 @@ clear_prompt() {
   echo -ne "${CURSOL_UP}${CLEAR_LINE}${CURSOL_UP}"
 }
 
-if [ $# -lt 1 ]; then
-  (
-    echo "[WARN] Must need command."
-    echo ""
-    usage
-  ) >&2
-  exit 1
-fi
-
 main ${1+"$@"}
+exit $?
