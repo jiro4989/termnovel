@@ -4,15 +4,20 @@
 set -eu
 
 readonly CURRENT_DIR="$(
-  cd "$(dirname "${BASH_SOURCE:-$0}")"
-  pwd
+  cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd
 )"
 readonly SCRIPT_NAME=$(basename "$0")
 readonly LIB_DIR=$(dirname "$CURRENT_DIR")/lib
 readonly NOVEL_DIR=$LIB_DIR/$SCRIPT_NAME
 readonly VERSION=1.0.0
 
+# 画面情報
 readonly WIDTH=80
+readonly TEXT_WIDTH="$((WIDTH - 6))" # テキストが描画できる範囲
+readonly HEIGHT=40
+readonly TEXT_HEIGHT="$((HEIGHT - 3))" # テキストが描画できる範囲
+readonly TOP_LEFT_X=5
+readonly TOP_LEFT_Y=2
 
 # ANSIエスケープシーケンス
 readonly BOLD="\x1b[1m"
@@ -21,7 +26,22 @@ readonly RESET="\x1b[m"
 readonly CURSOL_UP="\x1b[1A"
 readonly CLEAR_LINE="\x1b[2K"
 
+# 罫線
+readonly TOP_LEFT_CORNER="┏"
+readonly TOP_RIGHT_CORNER="┓"
+readonly BOTTOM_LEFT_CORNER="┗"
+readonly BOTTOM_RIGHT_CORNER="┛"
+readonly H_LINE="━"
+readonly V_LINE="┃"
+
 main() {
+  # テスト用の変数が有効のときは処理をしない
+  set +eu
+  if [[ "$RUN_TEST" = true ]]; then
+    return
+  fi
+  set -eu
+
   if [ $# -lt 1 ]; then
     (
       echo "[WARN] Must need command."
@@ -58,11 +78,9 @@ usage() {
 $SCRIPT_NAME is a soundnovel cli.
 
 Usage:
-
     $SCRIPT_NAME <command> [options]
 
 Commands:
-
     help        Print help.
     version     Print version.
     list        Print all sound novels.
@@ -86,16 +104,22 @@ cmd_start() {
   local file_id=$1
   local file_name
   file_name=$(find "$NOVEL_DIR"/* -name "*.novel" | awk -v id="$file_id" 'NR==id')
-  local x=1
-  #local y=0
+  local x=$TOP_LEFT_X
+  local y=$TOP_LEFT_Y
+
+  clear
+
+  # フレームの描画
+  print_screen_frame
 
   IFS=$'\n'
   for line in $(grep -vE "^#" < "$file_name"); do
     # Blankという特殊な文字列のみの行が出現したときは、画面上で改行を挟む
     if [ "$line" = "<BLANK>" ]; then
-      x=1
+      x=$TOP_LEFT_X
       echo
       echo
+      y=$((y + 2))
       continue
     fi
 
@@ -126,16 +150,22 @@ cmd_start() {
       fi
 
       # カーソル位置を x に移動
-      absolute_x $x
+      absolute_x "$x"
 
       # 文字を出力し、次の出力位置のために加算
       echo -n "$c"
       x=$((x + 2))
 
       # 位置xが幅を超過したら初期化して改行
-      if [ "$WIDTH" -lt "$x" ]; then
-        x=1
+      if [ "$TEXT_WIDTH" -lt "$x" ]; then
+        x=$TOP_LEFT_X
         echo
+        y=$((y + 1))
+        if [[ $TEXT_HEIGHT -le "$y" ]]; then
+          cursor_up $HEIGHT
+          print_screen_frame
+          y=$TOP_LEFT_Y
+        fi
       fi
 
       sleep 0.01
@@ -147,9 +177,11 @@ cmd_start() {
     clear_prompt
 
     if [ "$ans" = q ]; then
+      clear
       exit
     fi
   done
+  clear
 }
 
 ## 現在行の絶対位置にカーソルを移動
@@ -160,11 +192,81 @@ absolute_x() {
 
 ## 明滅するプロンプトを表示
 print_prompt() {
+  move_x 5
   echo -ne "${BOLD}${BLINK}> $RESET"
 }
 
 clear_prompt() {
   echo -ne "${CURSOL_UP}${CLEAR_LINE}${CURSOL_UP}"
+  redraw_side_frame
+}
+
+repeat() {
+  local repeat_count=$1
+  local word=$2
+  awk \
+    -v cnt="$repeat_count" \
+    -v w="$word" \
+    'END{for (i=0; i<cnt; i++) printf "%s", w}' \
+    <<< ""
+}
+
+print_flame() {
+  local width=$1
+  width="$((width - 4))"
+  local word=$2
+  local left_corner=$3
+  local right_corner=$4
+
+  echo -n "$left_corner"
+  repeat "$width" "$word"
+  echo -n "$right_corner"
+  echo
+}
+
+print_top_line() {
+  print_flame "$1" $H_LINE $TOP_LEFT_CORNER $TOP_RIGHT_CORNER
+}
+
+print_bottom_line() {
+  print_flame "$1" $H_LINE $BOTTOM_LEFT_CORNER $BOTTOM_RIGHT_CORNER
+}
+
+print_side_frame() {
+  print_flame "$1" " " $V_LINE $V_LINE
+}
+
+print_screen_frame() {
+  print_top_line $WIDTH
+  for ((i = 0; i < HEIGHT; i++)); do
+    print_side_frame $WIDTH
+  done
+  print_bottom_line $WIDTH
+  cursor_up $HEIGHT
+}
+
+redraw_side_frame() {
+  cursor_down 1
+  move_x 0
+  echo -en "$V_LINE"
+  move_x $((WIDTH - 2))
+  echo -en "$V_LINE"
+  cursor_up 1
+}
+
+cursor_up() {
+  local n=$1
+  echo -en "\x1b[${n}A"
+}
+
+cursor_down() {
+  local n=$1
+  echo -en "\x1b[${n}B"
+}
+
+move_x() {
+  local n=$1
+  echo -en "\x1b[${n}G"
 }
 
 main ${1+"$@"}
