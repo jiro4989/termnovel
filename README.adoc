@@ -7,22 +7,23 @@
 
 image:./doc/headache.gif[]
 
-// = soundnovel
-// 
-// == Usage
-// 
-// こんな感じで動くようにしたい。
-// 
-// [source,bash]
-// ----
-// % soundnovel help
-// % soundnovel list
-// % soundnovel start <novel_id>
-// % soundnovel start --peco
-// ----
-// 
-// == Novel format
-// 
-// TODO
-// 
-// // 鬱
+== 使い方
+
+=== 小説を読む
+
+[source,bash]
+----
+./bin/soundnovel start <novel_id>
+----
+
+=== 小説のIDを調べる
+
+[source,bash]
+----
+./bin/soundnovel list
+----
+
+== 小説の追加
+
+`lib/soundnovel/*.novel` にテキストファイルを配置する。
+書式は他のファイルを読めばだいたい分かると思う。
