@@ -1,4 +1,7 @@
-= soundnovel
+= termnovel
+
+`termnovel` is a command to read novels on terminal.
+Draw texts when you press any key.
 
 // いますぐ逃げてください
 // どこでもいいです
@@ -26,30 +29,32 @@
 // 私の分も生き延びてください
 // お願いします
 
-[source,bash]
-----
-% ./bin/soundnovel start 1
-----
-
 image:./doc/headache.gif[]
 
-== 使い方
+== Usage
 
-=== 小説を読む
-
-[source,bash]
-----
-./bin/soundnovel start <novel_id>
-----
-
-=== 小説のIDを調べる
+=== Read novel
 
 [source,bash]
 ----
-./bin/soundnovel list
+termnovel read -n <novel_id>
 ----
 
-== 小説の追加
+=== Search novel ID
 
-`lib/soundnovel/*.novel` にテキストファイルを配置する。
-書式は他のファイルを読めばだいたい分かると思う。
+[source,bash]
+----
+termnovel list
+----
+
+== Installation
+
+[source,bash]
+----
+nimble install termnovel
+----
+
+== How to add novel
+
+Add novel to `src/novels` as markdown.
+About markdown format, please see other novels.

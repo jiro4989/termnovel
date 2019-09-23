@@ -1,51 +1,49 @@
-language: bash
+sudo: false
 
-matrix:
-  include:
-    - os: linux
-      env: SH_VERSION=default
-    - os: linux
-      env: SH_VERSION=3.2
-    - os: linux
-      env: SH_VERSION=4.0
-    - os: linux
-      env: SH_VERSION=4.1
-    - os: linux
-      env: SH_VERSION=4.2
-    - os: linux
-      env: SH_VERSION=4.3
-    - os: linux
-      env: SH_VERSION=4.4
-    - os: linux
-      env: SH_VERSION=5.0
+language: c
+
+os:
+  - linux
+  - osx
+
+env:
+  - PATH=$HOME/.nimble/bin:$PATH
+    APP_NAME=termnovel
+
+cache:
+  directories:
+    - $HOME/.nimble
+    - $HOME/.choosenim
 
 addons:
   apt:
     packages:
-      - gawk
-      - gcc
-      - make
-      - golang
-      - shellcheck
+      - libcurl4-openssl-dev
+      - libsdl1.2-dev
+      - libgc-dev
+      - libsfml-dev
 
 before_install:
-  - sudo add-apt-repository ppa:duggan/bats --yes
-  - sudo apt-get update -qq
-  ## Install bash
-  - export TMPDIR=$TRAVIS_BUILD_DIR/tmp
-  - mkdir -p $TMPDIR
-  - if [[ "$SH_VERSION" != "default" ]];then ( cd "$TMPDIR" && curl "http://ftp.gnu.org/gnu/bash/bash-${SH_VERSION}.tar.gz" | tar xvz && cd bash* && ./configure; make && sudo make install && sudo mv /bin/bash /bin/bash.old && sudo cp ./bash /bin/bash ) ;fi
-  - docker pull koalaman/shellcheck:stable ## Official docker container (v0.6.0 or later)
+  - if [ ! -e $HOME/.nimble/bin/nim ]; then curl https://nim-lang.org/choosenim/init.sh -sSf -o init.sh && bash init.sh -y; choosenim update stable; fi
 
-install:
-  - sudo apt-get install -qq bats
-  - GO111MODULE=off go get mvdan.cc/sh/cmd/shfmt
-  - sudo ./install.sh
-  - alias shellcheck='docker run -v "$PWD:/mnt" koalaman/shellcheck'
-  - bash --version
-  - shellcheck --version
+before_script:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then unset -f cd; fi
+  - echo PATH:${PATH}
 
 script:
-  - shfmt -i 2 -ci -sr -d bin/
-  - shellcheck bin/*
-  - ./test.bats
+  - nimble ci
+
+before_deploy:
+  - mkdir -p dist/${APP_NAME}_${TRAVIS_OS_NAME}
+  - cp -rf LICENSE README* bin dist/${APP_NAME}_${TRAVIS_OS_NAME}/
+  - tar -C dist -czf ${APP_NAME}_${TRAVIS_OS_NAME}{.tar.gz,}
+
+deploy:
+  - provider: releases
+    api_key:
+      secure: not yet
+    keep-history: false
+    skip_cleanup: true
+    file: ${APP_NAME}_${TRAVIS_OS_NAME}.tar.gz
+    on:
+      tags: true

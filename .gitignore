@@ -1,0 +1,7 @@
+/bin/
+/dist/
+tests/*
+src/
+!src/*.*
+!src/termnovelpkg
+!tests/*.*
