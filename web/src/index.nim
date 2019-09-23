@@ -11,15 +11,16 @@ const
   waitTime = 100
 
 var
-  showedParagraphs: seq[seq[seq[VNode]]]
+  showedParagraphs: seq[seq[string]]
   paraPos: int
   linePos: int
+  pos: int
   novels = @[
     Novel(
       title: "頭痛",
       desc: "この頭痛を止めたい",
       author: "次郎",
-      paragraphs: @[@["うんこ", "もりもり"], @["もりおうがい"]],
+      paragraphs: @[@["うんこ", "もりもり"], @["もりおうがい"], @["うんちんが", "うんち"]],
     ),
     Novel(
       title: "頭痛2",
@@ -49,16 +50,7 @@ proc makeNovelRow(i: int): VNode =
       button:
         text "Read"
         proc onclick(ev: Event, n: VNode) =
-          for para in novel.paragraphs:
-            var pnode: seq[seq[VNode]]
-            for line in para:
-              var lnode: seq[VNode]
-              for ch in line.toRunes:
-                let chnode = buildHtml(span(class="hide")):
-                  text $ch
-                lnode.add(chnode)
-              pnode.add(lnode)
-            showedParagraphs.add(pnode)
+          showedParagraphs.add(novel.paragraphs)
     td: text novel.title
     td: text novel.desc
     td: text novel.author
@@ -67,18 +59,15 @@ proc createDom(): VNode =
   result = buildHtml(tdiv):
     h1: text "termnovel web"
     p: text "unko"
-    echo "うんこ"
     hr()
     button:
       text "Next"
       proc onclick(ev: Event, n: VNode) =
         let sp = showedParagraphs[paraPos]
         let sl = sp[linePos]
-        let cnt = sl.len
-        var pos: int
+        let cnt = sl.toRunes.len
         proc increment =
-          echo pos
-          showedParagraphs[paraPos][linePos][pos].class = "show"
+          echo paraPos, ":", linePos, ":", pos
           inc(pos)
           redraw()
           if pos < cnt:
@@ -86,6 +75,9 @@ proc createDom(): VNode =
           else:
             inc(linePos)
             pos = 0
+            if sp.len <= linePos:
+              linePos = 0
+              inc(paraPos)
         discard setTimeout(increment, waitTime)
     table:
       thead:
@@ -99,11 +91,19 @@ proc createDom(): VNode =
         for i in 0..<novels.len:
           makeNovelRow(i)
     hr()
-    for para in showedParagraphs:
+    for pi, para in showedParagraphs:
       p:
-        for line in para:
-          for ch in line:
-            ch
+        for li, line in para:
+          for ci, ch in line.toRunes:
+            let cls =
+              if pi < paraPos: "show"
+              else:
+                if li < linePos: "show"
+                else:
+                  if ci < pos: "show"
+                  else: "hide"
+            span(class=cls):
+              text $ch
 
 proc keyDown(evt: kdom.Event) =
   var e = ((KeyboardEvent)evt)
