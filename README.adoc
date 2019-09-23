@@ -1,5 +1,8 @@
 = termnovel
 
+`termnovel` is a command to read novels on terminal.
+Draw texts when you press any key.
+
 // いますぐ逃げてください
 // どこでもいいです
 // あなたのいるその場所から
