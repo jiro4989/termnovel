@@ -2,7 +2,7 @@
 
 version       = "1.0.0"
 author        = "jiro4989"
-description   = "A new awesome nimble package"
+description   = "A command that to read novel on terminal"
 license       = "MIT"
 srcDir        = "src"
 binDir        = "bin"
