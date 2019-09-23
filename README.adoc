@@ -1,5 +1,7 @@
 = termnovel
 
+image:https://travis-ci.org/jiro4989/termnovel.svg?branch=master["Build Status", link="https://travis-ci.org/jiro4989/termnovel"]
+
 `termnovel` is a command to read novels on terminal.
 Draw texts when you press any key.
 
