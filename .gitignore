@@ -1,7 +1,8 @@
 /bin/
 /dist/
 tests/*
-src/
+src/*
 !src/*.*
+!src/novels/
 !src/termnovelpkg
 !tests/*.*
